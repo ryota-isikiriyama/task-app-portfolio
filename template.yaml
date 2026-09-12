@@ -1,0 +1,64 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Task Management API Portfolio
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 512
+  Api:
+    Cors:
+      AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+      AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+      AllowOrigin: "'*'"
+
+Resources:
+  TasksTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Tasks
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+
+  TaskFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: target/task-api-1.0.0.jar
+      Handler: com.example.task.handler.TaskHandler::handleRequest
+      Runtime: java17
+      Architectures:
+        - x86_64
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TasksTable
+      Events:
+        GetTasks:
+          Type: Api
+          Properties:
+            Path: /tasks
+            Method: get
+        CreateTask:
+          Type: Api
+          Properties:
+            Path: /tasks
+            Method: post
+        UpdateTask:
+          Type: Api
+          Properties:
+            Path: /tasks
+            Method: put
+        DeleteTask:
+          Type: Api
+          Properties:
+            Path: /tasks
+            Method: delete
+
+Outputs:
+  TaskApiUrl:
+    Description: "API Gateway endpoint URL"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/tasks"

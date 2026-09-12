@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task管理ボード</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #eef2f5;
+            padding: 30px 20px;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 25px;
+            color: #2c3e50;
+        }
+        .input-container {
+            max-width: 750px;
+            margin: 0 auto 30px auto;
+            display: flex;
+            gap: 10px;
+            background: #ffffff;
+            padding: 16px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .input-container input[type="text"] {
+            padding: 12px 14px;
+            border: 2px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .input-container input[type="text"]:focus {
+            border-color: #3b82f6;
+        }
+        #taskAssignee {
+            width: 160px;
+        }
+        #taskTitle {
+            flex: 1;
+        }
+        .input-container button {
+            padding: 12px 24px;
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            white-space: nowrap;
+        }
+        .input-container button:hover {
+            background-color: #2563eb;
+        }
+        
+        /* カンバンボードエリア */
+        .board {
+            display: flex;
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            align-items: flex-start;
+        }
+        .column {
+            flex: 1;
+            background-color: #f1f5f9;
+            border-radius: 10px;
+            padding: 16px;
+            min-height: 500px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+        }
+        .column-header {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #cbd5e1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .column-header .count {
+            background-color: #cbd5e1;
+            color: #475569;
+            font-size: 12px;
+            padding: 2px 8px;
+            border-radius: 12px;
+        }
+        .task-list {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-height: 400px;
+        }
+        
+        /* タスクカード */
+        .card {
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 14px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            cursor: grab;
+            user-select: none;
+            transition: transform 0.15s, box-shadow 0.15s;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            border-left: 4px solid #94a3b8;
+        }
+        .card:active {
+            cursor: grabbing;
+        }
+        .card.dragging {
+            opacity: 0.4;
+            transform: scale(0.98);
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        .card-text {
+            font-size: 14px;
+            font-weight: 600;
+            word-break: break-all;
+            color: #1e293b;
+        }
+        .delete-btn {
+            background: none;
+            border: none;
+            color: #ef4444;
+            font-size: 16px;
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 4px;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+        .delete-btn:hover {
+            opacity: 1;
+            background-color: #fee2e2;
+        }
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 4px;
+            padding-top: 6px;
+            border-top: 1px dashed #e2e8f0;
+        }
+        .assignee-badge {
+            background-color: #e2e8f0;
+            color: #334155;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        /* カラムごとのテーマカラー */
+        #col-todo { border-top: 4px solid #f59e0b; }
+        #col-inprogress { border-top: 4px solid #3b82f6; }
+        #col-done { border-top: 4px solid #10b981; }
+
+        #col-todo .card { border-left-color: #f59e0b; }
+        #col-inprogress .card { border-left-color: #3b82f6; }
+        #col-done .card { border-left-color: #10b981; }
+        #col-done .card-text { text-decoration: line-through; color: #94a3b8; }
+    </style>
+</head>
+<body>
+
+<h1>Task管理ボード</h1>
+
+<div class="input-container">
+    <input type="text" id="taskAssignee" placeholder="担当者名 (例: 山田)">
+    <input type="text" id="taskTitle" placeholder="新しいタスクを入力..." onkeydown="if(event.key==='Enter') addTask()">
+    <button onclick="addTask()">タスク追加</button>
+</div>
+
+<div class="board">
+    <!-- 未着手 (PENDING) -->
+    <div class="column" id="col-todo">
+        <div class="column-header">
+            未着手 (TODO)
+            <span class="count" id="count-todo">0</span>
+        </div>
+        <div class="task-list" id="PENDING" ondragover="allowDrop(event)" ondrop="drop(event)"></div>
+    </div>
+
+    <!-- 進行中 (IN_PROGRESS) -->
+    <div class="column" id="col-inprogress">
+        <div class="column-header">
+            進行中 (IN_PROGRESS)
+            <span class="count" id="count-inprogress">0</span>
+        </div>
+        <div class="task-list" id="IN_PROGRESS" ondragover="allowDrop(event)" ondrop="drop(event)"></div>
+    </div>
+
+    <!-- 完了 (COMPLETED) -->
+    <div class="column" id="col-done">
+        <div class="column-header">
+            完了 (DONE)
+            <span class="count" id="count-done">0</span>
+        </div>
+        <div class="task-list" id="COMPLETED" ondragover="allowDrop(event)" ondrop="drop(event)"></div>
+    </div>
+</div>
+
+<script>
+    const API_URL = "https://ra1yyej058.execute-api.ap-northeast-1.amazonaws.com/Prod/tasks";
+
+    let draggedTask = null;
+
+    // 1. タスク一覧の取得・画面描画
+    async function fetchTasks() {
+        try {
+            const res = await fetch(API_URL);
+            const tasks = await res.json();
+            
+            const lists = {
+                'PENDING': document.getElementById('PENDING'),
+                'IN_PROGRESS': document.getElementById('IN_PROGRESS'),
+                'COMPLETED': document.getElementById('COMPLETED')
+            };
+            Object.values(lists).forEach(el => el.innerHTML = '');
+
+            let counts = { 'PENDING': 0, 'IN_PROGRESS': 0, 'COMPLETED': 0 };
+
+            tasks.forEach(task => {
+                const status = task.status || 'PENDING';
+                const container = lists[status] || lists['PENDING'];
+
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.draggable = true;
+                card.id = `task-${task.id}`;
+
+                // ドラッグイベント用にタスクデータをセット
+                card.ondragstart = (e) => dragStart(e, task);
+                card.ondragend = dragEnd;
+
+                const assignee = task.assignee || '未設定';
+                const createdAt = task.createdAt || '日時不明';
+
+                card.innerHTML = `
+                    <div class="card-header">
+                        <span class="card-text">${escapeHtml(task.title)}</span>
+                        <button class="delete-btn" onclick="deleteTask('${task.id}')" title="削除">✕</button>
+                    </div>
+                    <div class="card-footer">
+                        <span class="assignee-badge">👤 ${escapeHtml(assignee)}</span>
+                        <span>🕒 ${escapeHtml(createdAt)}</span>
+                    </div>
+                `;
+
+                container.appendChild(card);
+                counts[status] = (counts[status] || 0) + 1;
+            });
+
+            document.getElementById('count-todo').textContent = counts['PENDING'] || 0;
+            document.getElementById('count-inprogress').textContent = counts['IN_PROGRESS'] || 0;
+            document.getElementById('count-done').textContent = counts['COMPLETED'] || 0;
+
+        } catch (err) {
+            console.error("タスク取得エラー:", err);
+        }
+    }
+
+    // 2. 新規タスクの追加
+    async function addTask() {
+        const titleInput = document.getElementById('taskTitle');
+        const assigneeInput = document.getElementById('taskAssignee');
+        
+        const title = titleInput.value.trim();
+        const assignee = assigneeInput.value.trim() || '未設定';
+
+        if (!title) return;
+
+        // 現在の日時（yyyy/MM/dd HH:mm 形式）を生成
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const date = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const createdAt = `${year}/${month}/${date} ${hours}:${minutes}`;
+
+        try {
+            await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    title: title, 
+                    assignee: assignee,
+                    createdAt: createdAt,
+                    status: 'PENDING' 
+                })
+            });
+            titleInput.value = '';
+            fetchTasks();
+        } catch (err) {
+            console.error("追加エラー:", err);
+        }
+    }
+
+    // 3. ドラッグ＆ドロップ関連処理
+    function dragStart(e, task) {
+        draggedTask = task;
+        e.target.classList.add('dragging');
+    }
+
+    function dragEnd(e) {
+        e.target.classList.remove('dragging');
+    }
+
+    function allowDrop(e) {
+        e.preventDefault();
+    }
+
+    async function drop(e) {
+        e.preventDefault();
+        const targetList = e.currentTarget;
+        const newStatus = targetList.id;
+
+        if (!draggedTask || !newStatus) return;
+
+        try {
+            await fetch(API_URL, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: draggedTask.id,
+                    title: draggedTask.title,
+                    assignee: draggedTask.assignee,
+                    createdAt: draggedTask.createdAt,
+                    status: newStatus
+                })
+            });
+
+            draggedTask = null;
+            fetchTasks();
+        } catch (err) {
+            console.error("ステータス更新エラー:", err);
+        }
+    }
+
+    // 4. タスクの削除
+    async function deleteTask(id) {
+        try {
+            await fetch(`${API_URL}?id=${id}`, { method: 'DELETE' });
+            fetchTasks();
+        } catch (err) {
+            console.error("削除エラー:", err);
+        }
+    }
+
+    function escapeHtml(str) {
+        return str.replace(/[&<>"']/g, function(m) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+        });
+    }
+
+    fetchTasks();
+</script>
+
+</body>
+</html>
