@@ -13,29 +13,33 @@
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #eef2f5;
-            padding: 30px 20px;
+            padding: 20px 15px;
             color: #333;
         }
         h1 {
             text-align: center;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             color: #2c3e50;
+            font-size: 24px;
         }
+        
+        /* フォームエリアの基本スタイル */
         .input-container {
             max-width: 750px;
-            margin: 0 auto 30px auto;
+            margin: 0 auto 25px auto;
             display: flex;
             gap: 10px;
             background: #ffffff;
             padding: 16px;
             border-radius: 10px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            flex-wrap: wrap; /* スマホで自動折り返し */
         }
         .input-container input[type="text"] {
             padding: 12px 14px;
             border: 2px solid #cbd5e1;
             border-radius: 6px;
-            font-size: 14px;
+            font-size: 16px; /* iOSのズーム防止 */
             outline: none;
             transition: border-color 0.2s;
         }
@@ -47,6 +51,7 @@
         }
         #taskTitle {
             flex: 1;
+            min-width: 200px;
         }
         .input-container button {
             padding: 12px 24px;
@@ -55,9 +60,11 @@
             border: none;
             border-radius: 6px;
             font-weight: bold;
+            font-size: 15px;
             cursor: pointer;
             transition: background-color 0.2s;
             white-space: nowrap;
+            min-height: 48px; /* タップしやすい高さ */
         }
         .input-container button:hover {
             background-color: #2563eb;
@@ -80,6 +87,7 @@
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
             display: flex;
             flex-direction: column;
+            width: 100%;
         }
         .column-header {
             font-size: 16px;
@@ -103,7 +111,7 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
-            min-height: 400px;
+            min-height: 200px;
         }
         
         /* タスクカード */
@@ -131,6 +139,7 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
+            gap: 10px;
         }
         .card-text {
             font-size: 14px;
@@ -142,11 +151,11 @@
             background: none;
             border: none;
             color: #ef4444;
-            font-size: 16px;
+            font-size: 18px;
             cursor: pointer;
-            padding: 2px 6px;
+            padding: 4px 8px;
             border-radius: 4px;
-            opacity: 0.6;
+            opacity: 0.7;
             transition: opacity 0.2s;
         }
         .delete-btn:hover {
@@ -162,6 +171,8 @@
             margin-top: 4px;
             padding-top: 6px;
             border-top: 1px dashed #e2e8f0;
+            flex-wrap: wrap;
+            gap: 6px;
         }
         .assignee-badge {
             background-color: #e2e8f0;
@@ -180,6 +191,30 @@
         #col-inprogress .card { border-left-color: #3b82f6; }
         #col-done .card { border-left-color: #10b981; }
         #col-done .card-text { text-decoration: line-through; color: #94a3b8; }
+
+        /* --- レスポンシブ対応（スマホ・タブレット向けCSS） --- */
+        @media (max-width: 768px) {
+            body {
+                padding: 15px 10px;
+            }
+            .input-container {
+                flex-direction: column;
+                gap: 12px;
+            }
+            #taskAssignee, #taskTitle, .input-container button {
+                width: 100%;
+            }
+            .board {
+                flex-direction: column; /* カラムを縦並びにする */
+                gap: 20px;
+            }
+            .column {
+                min-height: auto; /* スマホでは高さを自動調整 */
+            }
+            .task-list {
+                min-height: 80px;
+            }
+        }
     </style>
 </head>
 <body>
