@@ -15,7 +15,7 @@
             background-color: #eef2f5;
             padding: 20px 15px;
             color: #333;
-            touch-action: manipulation; /* タッチ操作の応答性を向上 */
+            touch-action: manipulation;
         }
         h1 {
             text-align: center;
@@ -24,27 +24,38 @@
             font-size: 24px;
         }
         
-        /* フォームエリア */
-        .input-container {
+        /* フォーム・フィルターエリア */
+        .controls-container {
             max-width: 750px;
             margin: 0 auto 25px auto;
             display: flex;
-            gap: 10px;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .input-container, .filter-container {
             background: #ffffff;
-            padding: 16px;
+            padding: 14px 16px;
             border-radius: 10px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            display: flex;
+            gap: 10px;
             flex-wrap: wrap;
+            align-items: center;
         }
-        .input-container input[type="text"] {
+        .filter-container {
+            font-size: 14px;
+            color: #475569;
+            font-weight: 600;
+        }
+        .input-container input[type="text"], .filter-container select {
             padding: 12px 14px;
             border: 2px solid #cbd5e1;
             border-radius: 6px;
-            font-size: 16px; /* iOSズーム防止 */
+            font-size: 16px;
             outline: none;
             transition: border-color 0.2s;
         }
-        .input-container input[type="text"]:focus {
+        .input-container input[type="text"]:focus, .filter-container select:focus {
             border-color: #3b82f6;
         }
         #taskAssignee {
@@ -53,6 +64,10 @@
         #taskTitle {
             flex: 1;
             min-width: 200px;
+        }
+        #filterAssignee {
+            flex: 1;
+            background-color: #f8fafc;
         }
         .input-container button {
             padding: 12px 24px;
@@ -122,9 +137,9 @@
             border-radius: 8px;
             padding: 14px;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            cursor: grab;
+            cursor: pointer;
             user-select: none;
-            touch-action: none; /* スマホドラッグ時の画面スクロール干渉を防止 */
+            touch-action: none;
             transition: transform 0.15s, box-shadow 0.15s;
             display: flex;
             flex-direction: column;
@@ -132,8 +147,8 @@
             border-left: 4px solid #94a3b8;
             position: relative;
         }
-        .card:active {
-            cursor: grabbing;
+        .card:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.12);
         }
         .card.dragging {
             opacity: 0.5;
@@ -186,7 +201,7 @@
             font-weight: 500;
         }
 
-        /* スマホ用ステータス移動用クイックボタン */
+        /* スマホ用ステータス移動ボタン */
         .status-actions {
             display: flex;
             gap: 6px;
@@ -206,6 +221,69 @@
             background-color: #e2e8f0;
         }
 
+        /* 編集モーダル背景 */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: #ffffff;
+            padding: 24px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 450px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .modal-content h3 {
+            color: #1e293b;
+            font-size: 18px;
+        }
+        .modal-content label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #475569;
+        }
+        .modal-content input {
+            padding: 10px 12px;
+            border: 2px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 15px;
+            outline: none;
+        }
+        .modal-content input:focus {
+            border-color: #3b82f6;
+        }
+        .modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .modal-buttons button {
+            padding: 10px 18px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            font-size: 14px;
+        }
+        .btn-cancel {
+            background-color: #e2e8f0;
+            color: #475569;
+        }
+        .btn-save {
+            background-color: #3b82f6;
+            color: white;
+        }
+
         /* カラムごとのテーマカラー */
         #col-todo { border-top: 4px solid #f59e0b; }
         #col-inprogress { border-top: 4px solid #3b82f6; }
@@ -216,28 +294,14 @@
         #col-done .card { border-left-color: #10b981; }
         #col-done .card-text { text-decoration: line-through; color: #94a3b8; }
 
-        /* レスポンシブ対応 (スマホ) */
+        /* レスポンシブ対応 */
         @media (max-width: 768px) {
-            body {
-                padding: 15px 10px;
-            }
-            .input-container {
-                flex-direction: column;
-                gap: 12px;
-            }
-            #taskAssignee, #taskTitle, .input-container button {
-                width: 100%;
-            }
-            .board {
-                flex-direction: column;
-                gap: 20px;
-            }
-            .column {
-                min-height: auto;
-            }
-            .task-list {
-                min-height: 80px;
-            }
+            body { padding: 15px 10px; }
+            .input-container, .filter-container { flex-direction: column; gap: 10px; }
+            #taskAssignee, #taskTitle, #filterAssignee, .input-container button { width: 100%; }
+            .board { flex-direction: column; gap: 20px; }
+            .column { min-height: auto; }
+            .task-list { min-height: 80px; }
         }
     </style>
 </head>
@@ -245,10 +309,21 @@
 
 <h1>Task管理ボード</h1>
 
-<div class="input-container">
-    <input type="text" id="taskAssignee" placeholder="担当者名 (例: 山田)">
-    <input type="text" id="taskTitle" placeholder="新しいタスクを入力..." onkeydown="if(event.key==='Enter') addTask()">
-    <button onclick="addTask()">タスク追加</button>
+<div class="controls-container">
+    <!-- フィルターエリア -->
+    <div class="filter-container">
+        <label for="filterAssignee">👤 担当者で絞り込み:</label>
+        <select id="filterAssignee" onchange="fetchTasks()">
+            <option value="ALL">すべて表示</option>
+        </select>
+    </div>
+
+    <!-- 追加フォーム -->
+    <div class="input-container">
+        <input type="text" id="taskAssignee" placeholder="担当者名 (例: 山田)">
+        <input type="text" id="taskTitle" placeholder="新しいタスクを入力..." onkeydown="if(event.key==='Enter') addTask()">
+        <button onclick="addTask()">タスク追加</button>
+    </div>
 </div>
 
 <div class="board">
@@ -280,18 +355,51 @@
     </div>
 </div>
 
+<!-- タスク編集モーダル -->
+<div class="modal-overlay" id="editModal">
+    <div class="modal-content">
+        <h3>タスクの編集</h3>
+        <input type="hidden" id="editTaskId">
+        <input type="hidden" id="editTaskStatus">
+        <input type="hidden" id="editTaskCreatedAt">
+        
+        <label for="editTaskTitle">タスク名</label>
+        <input type="text" id="editTaskTitle">
+        
+        <label for="editTaskAssignee">担当者名</label>
+        <input type="text" id="editTaskAssignee">
+        
+        <div class="modal-buttons">
+            <button class="btn-cancel" onclick="closeEditModal()">キャンセル</button>
+            <button class="btn-save" onclick="saveEditedTask()">保存する</button>
+        </div>
+    </div>
+</div>
+
 <script>
     const API_URL = "https://ra1yyej058.execute-api.ap-northeast-1.amazonaws.com/Prod/tasks";
 
     let draggedTask = null;
     let touchCardEl = null;
+    let allTasksCache = []; // 取得したタスクのキャッシュ
 
-    // 1. タスク一覧取得
+    // 1. タスク一覧取得・描画
     async function fetchTasks() {
         try {
             const res = await fetch(API_URL);
-            const tasks = await res.json();
+            allTasksCache = await res.json();
             
+            // 担当者フィルターの選択肢を更新
+            updateAssigneeFilterOptions(allTasksCache);
+
+            const selectedAssignee = document.getElementById('filterAssignee').value;
+            
+            // フィルター適用
+            const filteredTasks = allTasksCache.filter(task => {
+                if (selectedAssignee === 'ALL') return true;
+                return (task.assignee || '未設定') === selectedAssignee;
+            });
+
             const lists = {
                 'PENDING': document.getElementById('PENDING'),
                 'IN_PROGRESS': document.getElementById('IN_PROGRESS'),
@@ -301,7 +409,7 @@
 
             let counts = { 'PENDING': 0, 'IN_PROGRESS': 0, 'COMPLETED': 0 };
 
-            tasks.forEach(task => {
+            filteredTasks.forEach(task => {
                 const status = task.status || 'PENDING';
                 const container = lists[status] || lists['PENDING'];
 
@@ -310,19 +418,25 @@
                 card.draggable = true;
                 card.id = `task-${task.id}`;
 
-                // PCドラッグイベント
+                // PCドラッグ
                 card.ondragstart = (e) => dragStart(e, task);
                 card.ondragend = dragEnd;
 
-                // スマホタッチ（ドラッグ）イベント
+                // スマホタッチ
                 card.addEventListener('touchstart', (e) => handleTouchStart(e, task), {passive: false});
                 card.addEventListener('touchmove', handleTouchMove, {passive: false});
                 card.addEventListener('touchend', handleTouchEnd);
 
+                // カードクリックで編集モーダルを開く（削除ボタンや移動ボタン以外）
+                card.onclick = (e) => {
+                    if (e.target.tagName === 'BUTTON') return;
+                    openEditModal(task);
+                };
+
                 const assignee = task.assignee || '未設定';
                 const createdAt = task.createdAt || '日時不明';
 
-                // ステータス移動用ボタンの生成（スマホでタップ移動可能にする）
+                // ステータス移動用クイックボタン
                 let moveButtonsHtml = '<div class="status-actions">';
                 if (status !== 'PENDING') {
                     moveButtonsHtml += `<button class="move-btn" onclick="moveTaskDirect('${task.id}', 'PENDING')">← 未着手</button>`;
@@ -358,6 +472,21 @@
         } catch (err) {
             console.error("タスク取得エラー:", err);
         }
+    }
+
+    // 担当者フィルターの選択肢自動生成
+    function updateAssigneeFilterOptions(tasks) {
+        const select = document.getElementById('filterAssignee');
+        const currentVal = select.value;
+        
+        const assignees = [...new Set(tasks.map(t => t.assignee || '未設定'))];
+        
+        let html = '<option value="ALL">すべて表示</option>';
+        assignees.forEach(name => {
+            const selected = name === currentVal ? 'selected' : '';
+            html += `<option value="${escapeHtml(name)}" ${selected}>${escapeHtml(name)}</option>`;
+        });
+        select.innerHTML = html;
     }
 
     // 2. 新規タスク追加
@@ -396,7 +525,53 @@
         }
     }
 
-    // 3. PC用ドラッグ＆ドロップ処理
+    // 3. タスク編集モーダルの制御
+    function openEditModal(task) {
+        document.getElementById('editTaskId').value = task.id;
+        document.getElementById('editTaskStatus').value = task.status || 'PENDING';
+        document.getElementById('editTaskCreatedAt').value = task.createdAt || '';
+        document.getElementById('editTaskTitle').value = task.title || '';
+        document.getElementById('editTaskAssignee').value = task.assignee || '未設定';
+        
+        document.getElementById('editModal').style.display = 'flex';
+    }
+
+    function closeEditModal() {
+        document.getElementById('editModal').style.display = 'none';
+    }
+
+    async function saveEditedTask() {
+        const id = document.getElementById('editTaskId').value;
+        const status = document.getElementById('editTaskStatus').value;
+        const createdAt = document.getElementById('editTaskCreatedAt').value;
+        const title = document.getElementById('editTaskTitle').value.trim();
+        const assignee = document.getElementById('editTaskAssignee').value.trim() || '未設定';
+
+        if (!title) {
+            alert('タスク名を入力してください');
+            return;
+        }
+
+        try {
+            await fetch(API_URL, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: id,
+                    title: title,
+                    assignee: assignee,
+                    createdAt: createdAt,
+                    status: status
+                })
+            });
+            closeEditModal();
+            fetchTasks();
+        } catch (err) {
+            console.error("編集保存エラー:", err);
+        }
+    }
+
+    // 4. ドラッグ＆ドロップ関連
     function dragStart(e, task) {
         draggedTask = task;
         e.target.classList.add('dragging');
@@ -419,9 +594,9 @@
         updateTaskStatus(draggedTask, newStatus);
     }
 
-    // 4. スマホ用タッチドラッグ処理
+    // スマホタッチ処理
     function handleTouchStart(e, task) {
-        if (e.target.tagName === 'BUTTON') return; // ボタン操作時はドラッグを開始しない
+        if (e.target.tagName === 'BUTTON') return;
         draggedTask = task;
         touchCardEl = e.currentTarget;
         touchCardEl.classList.add('dragging');
@@ -429,7 +604,7 @@
 
     function handleTouchMove(e) {
         if (!touchCardEl) return;
-        e.preventDefault(); // ドラッグ中の画面スクロールを停止
+        e.preventDefault();
     }
 
     function handleTouchEnd(e) {
@@ -449,21 +624,13 @@
         draggedTask = null;
     }
 
-    // 5. タスクステータス直接移動（タップ操作）
     async function moveTaskDirect(id, newStatus) {
-        try {
-            const res = await fetch(API_URL);
-            const tasks = await res.json();
-            const task = tasks.find(t => t.id === id);
-            if (task) {
-                updateTaskStatus(task, newStatus);
-            }
-        } catch (err) {
-            console.error("移動エラー:", err);
+        const task = allTasksCache.find(t => t.id === id);
+        if (task) {
+            updateTaskStatus(task, newStatus);
         }
     }
 
-    // ステータス更新共通処理
     async function updateTaskStatus(task, newStatus) {
         try {
             await fetch(API_URL, {
@@ -484,7 +651,7 @@
         }
     }
 
-    // 6. タスク削除
+    // 5. 削除
     async function deleteTask(id) {
         try {
             await fetch(`${API_URL}?id=${id}`, { method: 'DELETE' });
