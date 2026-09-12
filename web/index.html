@@ -15,6 +15,7 @@
             background-color: #eef2f5;
             padding: 20px 15px;
             color: #333;
+            touch-action: manipulation; /* タッチ操作の応答性を向上 */
         }
         h1 {
             text-align: center;
@@ -23,7 +24,7 @@
             font-size: 24px;
         }
         
-        /* フォームエリアの基本スタイル */
+        /* フォームエリア */
         .input-container {
             max-width: 750px;
             margin: 0 auto 25px auto;
@@ -33,13 +34,13 @@
             padding: 16px;
             border-radius: 10px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-            flex-wrap: wrap; /* スマホで自動折り返し */
+            flex-wrap: wrap;
         }
         .input-container input[type="text"] {
             padding: 12px 14px;
             border: 2px solid #cbd5e1;
             border-radius: 6px;
-            font-size: 16px; /* iOSのズーム防止 */
+            font-size: 16px; /* iOSズーム防止 */
             outline: none;
             transition: border-color 0.2s;
         }
@@ -64,7 +65,7 @@
             cursor: pointer;
             transition: background-color 0.2s;
             white-space: nowrap;
-            min-height: 48px; /* タップしやすい高さ */
+            min-height: 48px;
         }
         .input-container button:hover {
             background-color: #2563eb;
@@ -112,6 +113,7 @@
             flex-direction: column;
             gap: 12px;
             min-height: 200px;
+            padding: 4px;
         }
         
         /* タスクカード */
@@ -122,17 +124,19 @@
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             cursor: grab;
             user-select: none;
+            touch-action: none; /* スマホドラッグ時の画面スクロール干渉を防止 */
             transition: transform 0.15s, box-shadow 0.15s;
             display: flex;
             flex-direction: column;
             gap: 8px;
             border-left: 4px solid #94a3b8;
+            position: relative;
         }
         .card:active {
             cursor: grabbing;
         }
         .card.dragging {
-            opacity: 0.4;
+            opacity: 0.5;
             transform: scale(0.98);
         }
         .card-header {
@@ -182,6 +186,26 @@
             font-weight: 500;
         }
 
+        /* スマホ用ステータス移動用クイックボタン */
+        .status-actions {
+            display: flex;
+            gap: 6px;
+            margin-top: 6px;
+        }
+        .move-btn {
+            padding: 4px 8px;
+            font-size: 11px;
+            border: 1px solid #cbd5e1;
+            background-color: #f8fafc;
+            border-radius: 4px;
+            cursor: pointer;
+            color: #475569;
+            font-weight: 600;
+        }
+        .move-btn:active {
+            background-color: #e2e8f0;
+        }
+
         /* カラムごとのテーマカラー */
         #col-todo { border-top: 4px solid #f59e0b; }
         #col-inprogress { border-top: 4px solid #3b82f6; }
@@ -192,7 +216,7 @@
         #col-done .card { border-left-color: #10b981; }
         #col-done .card-text { text-decoration: line-through; color: #94a3b8; }
 
-        /* --- レスポンシブ対応（スマホ・タブレット向けCSS） --- */
+        /* レスポンシブ対応 (スマホ) */
         @media (max-width: 768px) {
             body {
                 padding: 15px 10px;
@@ -205,11 +229,11 @@
                 width: 100%;
             }
             .board {
-                flex-direction: column; /* カラムを縦並びにする */
+                flex-direction: column;
                 gap: 20px;
             }
             .column {
-                min-height: auto; /* スマホでは高さを自動調整 */
+                min-height: auto;
             }
             .task-list {
                 min-height: 80px;
@@ -260,8 +284,9 @@
     const API_URL = "https://ra1yyej058.execute-api.ap-northeast-1.amazonaws.com/Prod/tasks";
 
     let draggedTask = null;
+    let touchCardEl = null;
 
-    // 1. タスク一覧の取得・画面描画
+    // 1. タスク一覧取得
     async function fetchTasks() {
         try {
             const res = await fetch(API_URL);
@@ -285,12 +310,30 @@
                 card.draggable = true;
                 card.id = `task-${task.id}`;
 
-                // ドラッグイベント用にタスクデータをセット
+                // PCドラッグイベント
                 card.ondragstart = (e) => dragStart(e, task);
                 card.ondragend = dragEnd;
 
+                // スマホタッチ（ドラッグ）イベント
+                card.addEventListener('touchstart', (e) => handleTouchStart(e, task), {passive: false});
+                card.addEventListener('touchmove', handleTouchMove, {passive: false});
+                card.addEventListener('touchend', handleTouchEnd);
+
                 const assignee = task.assignee || '未設定';
                 const createdAt = task.createdAt || '日時不明';
+
+                // ステータス移動用ボタンの生成（スマホでタップ移動可能にする）
+                let moveButtonsHtml = '<div class="status-actions">';
+                if (status !== 'PENDING') {
+                    moveButtonsHtml += `<button class="move-btn" onclick="moveTaskDirect('${task.id}', 'PENDING')">← 未着手</button>`;
+                }
+                if (status !== 'IN_PROGRESS') {
+                    moveButtonsHtml += `<button class="move-btn" onclick="moveTaskDirect('${task.id}', 'IN_PROGRESS')">${status === 'PENDING' ? '進行中 →' : '← 進行中'}</button>`;
+                }
+                if (status !== 'COMPLETED') {
+                    moveButtonsHtml += `<button class="move-btn" onclick="moveTaskDirect('${task.id}', 'COMPLETED')">完了 →</button>`;
+                }
+                moveButtonsHtml += '</div>';
 
                 card.innerHTML = `
                     <div class="card-header">
@@ -301,6 +344,7 @@
                         <span class="assignee-badge">👤 ${escapeHtml(assignee)}</span>
                         <span>🕒 ${escapeHtml(createdAt)}</span>
                     </div>
+                    ${moveButtonsHtml}
                 `;
 
                 container.appendChild(card);
@@ -316,7 +360,7 @@
         }
     }
 
-    // 2. 新規タスクの追加
+    // 2. 新規タスク追加
     async function addTask() {
         const titleInput = document.getElementById('taskTitle');
         const assigneeInput = document.getElementById('taskAssignee');
@@ -326,7 +370,6 @@
 
         if (!title) return;
 
-        // 現在の日時（yyyy/MM/dd HH:mm 形式）を生成
         const now = new Date();
         const year = now.getFullYear();
         const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -353,7 +396,7 @@
         }
     }
 
-    // 3. ドラッグ＆ドロップ関連処理
+    // 3. PC用ドラッグ＆ドロップ処理
     function dragStart(e, task) {
         draggedTask = task;
         e.target.classList.add('dragging');
@@ -373,20 +416,67 @@
         const newStatus = targetList.id;
 
         if (!draggedTask || !newStatus) return;
+        updateTaskStatus(draggedTask, newStatus);
+    }
 
+    // 4. スマホ用タッチドラッグ処理
+    function handleTouchStart(e, task) {
+        if (e.target.tagName === 'BUTTON') return; // ボタン操作時はドラッグを開始しない
+        draggedTask = task;
+        touchCardEl = e.currentTarget;
+        touchCardEl.classList.add('dragging');
+    }
+
+    function handleTouchMove(e) {
+        if (!touchCardEl) return;
+        e.preventDefault(); // ドラッグ中の画面スクロールを停止
+    }
+
+    function handleTouchEnd(e) {
+        if (!touchCardEl || !draggedTask) return;
+        
+        const touch = e.changedTouches[0];
+        const targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
+        const taskList = targetEl ? targetEl.closest('.task-list') : null;
+
+        if (taskList) {
+            const newStatus = taskList.id;
+            updateTaskStatus(draggedTask, newStatus);
+        }
+
+        touchCardEl.classList.remove('dragging');
+        touchCardEl = null;
+        draggedTask = null;
+    }
+
+    // 5. タスクステータス直接移動（タップ操作）
+    async function moveTaskDirect(id, newStatus) {
+        try {
+            const res = await fetch(API_URL);
+            const tasks = await res.json();
+            const task = tasks.find(t => t.id === id);
+            if (task) {
+                updateTaskStatus(task, newStatus);
+            }
+        } catch (err) {
+            console.error("移動エラー:", err);
+        }
+    }
+
+    // ステータス更新共通処理
+    async function updateTaskStatus(task, newStatus) {
         try {
             await fetch(API_URL, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    id: draggedTask.id,
-                    title: draggedTask.title,
-                    assignee: draggedTask.assignee,
-                    createdAt: draggedTask.createdAt,
+                    id: task.id,
+                    title: task.title,
+                    assignee: task.assignee,
+                    createdAt: task.createdAt,
                     status: newStatus
                 })
             });
-
             draggedTask = null;
             fetchTasks();
         } catch (err) {
@@ -394,7 +484,7 @@
         }
     }
 
-    // 4. タスクの削除
+    // 6. タスク削除
     async function deleteTask(id) {
         try {
             await fetch(`${API_URL}?id=${id}`, { method: 'DELETE' });
