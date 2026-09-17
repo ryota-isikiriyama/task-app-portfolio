@@ -10,6 +10,10 @@ public class Task {
     private String status;
     private String assignee;   // 入力者・担当者名
     private String createdAt;  // 作成日時
+    private String dueDate;    // 締切日 (yyyy-MM-dd, 任意)
+    private String priority;   // 優先度 (LOW / MEDIUM / HIGH)
+    private Long order;        // カラム内の表示順（値が小さいほど上に表示）
+    private String description; // 詳細情報（任意、複数行可）
 
     public Task() {}
 
@@ -36,4 +40,16 @@ public class Task {
 
     public String getCreatedAt() { return createdAt; }
     public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
+
+    public String getDueDate() { return dueDate; }
+    public void setDueDate(String dueDate) { this.dueDate = dueDate; }
+
+    public String getPriority() { return priority; }
+    public void setPriority(String priority) { this.priority = priority; }
+
+    public Long getOrder() { return order; }
+    public void setOrder(Long order) { this.order = order; }
+
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
 }

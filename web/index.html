@@ -5,6 +5,53 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Task管理ボード</title>
     <style>
+        :root {
+            --bg: #eef2f5;
+            --text: #333333;
+            --heading: #2c3e50;
+            --panel-bg: #ffffff;
+            --panel-shadow: rgba(0, 0, 0, 0.06);
+            --column-bg: #f1f5f9;
+            --column-shadow: rgba(0, 0, 0, 0.05);
+            --border: #cbd5e1;
+            --muted: #475569;
+            --muted-2: #64748b;
+            --card-bg: #ffffff;
+            --card-shadow: rgba(0, 0, 0, 0.1);
+            --card-hover-shadow: rgba(0, 0, 0, 0.12);
+            --card-text: #1e293b;
+            --badge-bg: #e2e8f0;
+            --badge-text: #334155;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --danger: #ef4444;
+            --danger-bg: #fee2e2;
+            --success: #10b981;
+            --modal-overlay: rgba(0, 0, 0, 0.5);
+            --dashed-border: #e2e8f0;
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #0f172a;
+                --text: #e2e8f0;
+                --heading: #f1f5f9;
+                --panel-bg: #1e293b;
+                --panel-shadow: rgba(0, 0, 0, 0.4);
+                --column-bg: #16213a;
+                --column-shadow: rgba(0, 0, 0, 0.3);
+                --border: #334155;
+                --muted: #cbd5e1;
+                --muted-2: #94a3b8;
+                --card-bg: #1e293b;
+                --card-shadow: rgba(0, 0, 0, 0.4);
+                --card-hover-shadow: rgba(0, 0, 0, 0.55);
+                --card-text: #f1f5f9;
+                --badge-bg: #334155;
+                --badge-text: #e2e8f0;
+                --modal-overlay: rgba(0, 0, 0, 0.7);
+                --dashed-border: #334155;
+            }
+        }
         * {
             box-sizing: border-box;
             margin: 0;
@@ -12,18 +59,25 @@
         }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #eef2f5;
+            background-color: var(--bg);
             padding: 20px 15px;
-            color: #333;
+            color: var(--text);
             touch-action: manipulation;
         }
         h1 {
             text-align: center;
             margin-bottom: 20px;
-            color: #2c3e50;
+            color: var(--heading);
             font-size: 24px;
         }
-        
+
+        .loading {
+            text-align: center;
+            color: var(--muted-2);
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
         /* フォーム・フィルターエリア */
         .controls-container {
             max-width: 750px;
@@ -33,10 +87,10 @@
             gap: 12px;
         }
         .input-container, .filter-container {
-            background: #ffffff;
+            background: var(--panel-bg);
             padding: 14px 16px;
             border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            box-shadow: 0 2px 8px var(--panel-shadow);
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
@@ -44,19 +98,24 @@
         }
         .filter-container {
             font-size: 14px;
-            color: #475569;
+            color: var(--muted);
             font-weight: 600;
         }
-        .input-container input[type="text"], .filter-container select {
+        .input-container input[type="text"],
+        .input-container input[type="date"],
+        .input-container select,
+        .filter-container select {
             padding: 12px 14px;
-            border: 2px solid #cbd5e1;
+            border: 2px solid var(--border);
             border-radius: 6px;
             font-size: 16px;
             outline: none;
             transition: border-color 0.2s;
+            background-color: var(--panel-bg);
+            color: var(--text);
         }
-        .input-container input[type="text"]:focus, .filter-container select:focus {
-            border-color: #3b82f6;
+        .input-container input:focus, .input-container select:focus, .filter-container select:focus {
+            border-color: var(--accent);
         }
         #taskAssignee {
             width: 160px;
@@ -65,27 +124,57 @@
             flex: 1;
             min-width: 200px;
         }
+        #taskDueDate {
+            width: 160px;
+        }
+        #taskPriority {
+            width: 90px;
+        }
         #filterAssignee {
             flex: 1;
-            background-color: #f8fafc;
+            background-color: var(--bg);
+        }
+        .description-row {
+            display: block;
+        }
+        .input-container textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid var(--border);
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s;
+            background-color: var(--panel-bg);
+            color: var(--text);
+            resize: vertical;
+            min-height: 44px;
+        }
+        .input-container textarea:focus {
+            border-color: var(--accent);
         }
         .input-container button {
             padding: 12px 24px;
-            background-color: #3b82f6;
+            background-color: var(--accent);
             color: white;
             border: none;
             border-radius: 6px;
             font-weight: bold;
             font-size: 15px;
             cursor: pointer;
-            transition: background-color 0.2s;
+            transition: background-color 0.2s, opacity 0.2s;
             white-space: nowrap;
             min-height: 48px;
         }
         .input-container button:hover {
-            background-color: #2563eb;
+            background-color: var(--accent-hover);
         }
-        
+        .input-container button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
         /* カンバンボードエリア */
         .board {
             display: flex;
@@ -96,11 +185,11 @@
         }
         .column {
             flex: 1;
-            background-color: #f1f5f9;
+            background-color: var(--column-bg);
             border-radius: 10px;
             padding: 16px;
             min-height: 500px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 4px 6px -1px var(--column-shadow);
             display: flex;
             flex-direction: column;
             width: 100%;
@@ -110,14 +199,15 @@
             font-weight: bold;
             margin-bottom: 16px;
             padding-bottom: 8px;
-            border-bottom: 2px solid #cbd5e1;
+            border-bottom: 2px solid var(--border);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            color: var(--heading);
         }
         .column-header .count {
-            background-color: #cbd5e1;
-            color: #475569;
+            background-color: var(--badge-bg);
+            color: var(--muted);
             font-size: 12px;
             padding: 2px 8px;
             border-radius: 12px;
@@ -130,13 +220,13 @@
             min-height: 200px;
             padding: 4px;
         }
-        
+
         /* タスクカード */
         .card {
-            background-color: #ffffff;
+            background-color: var(--card-bg);
             border-radius: 8px;
             padding: 14px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 1px 3px var(--card-shadow);
             cursor: pointer;
             user-select: none;
             touch-action: none;
@@ -148,7 +238,7 @@
             position: relative;
         }
         .card:hover {
-            box-shadow: 0 4px 8px rgba(0,0,0,0.12);
+            box-shadow: 0 4px 8px var(--card-hover-shadow);
         }
         .card.dragging {
             opacity: 0.5;
@@ -164,12 +254,12 @@
             font-size: 14px;
             font-weight: 600;
             word-break: break-all;
-            color: #1e293b;
+            color: var(--card-text);
         }
         .delete-btn {
             background: none;
             border: none;
-            color: #ef4444;
+            color: var(--danger);
             font-size: 18px;
             cursor: pointer;
             padding: 4px 8px;
@@ -179,26 +269,47 @@
         }
         .delete-btn:hover {
             opacity: 1;
-            background-color: #fee2e2;
+            background-color: var(--danger-bg);
         }
         .card-footer {
             display: flex;
             justify-content: space-between;
             align-items: center;
             font-size: 12px;
-            color: #64748b;
+            color: var(--muted-2);
             margin-top: 4px;
             padding-top: 6px;
-            border-top: 1px dashed #e2e8f0;
+            border-top: 1px dashed var(--dashed-border);
             flex-wrap: wrap;
             gap: 6px;
         }
         .assignee-badge {
-            background-color: #e2e8f0;
-            color: #334155;
+            background-color: var(--badge-bg);
+            color: var(--badge-text);
             padding: 2px 8px;
             border-radius: 4px;
             font-weight: 500;
+        }
+        .priority-badge {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            color: #ffffff;
+        }
+        .priority-HIGH { background-color: #ef4444; }
+        .priority-MEDIUM { background-color: #f59e0b; }
+        .priority-LOW { background-color: #64748b; }
+
+        .due-badge {
+            color: var(--muted-2);
+        }
+        .due-badge.overdue {
+            color: var(--danger);
+            font-weight: 700;
+        }
+        .description-icon {
+            font-size: 13px;
+            opacity: 0.8;
         }
 
         /* スマホ用ステータス移動ボタン */
@@ -210,15 +321,15 @@
         .move-btn {
             padding: 4px 8px;
             font-size: 11px;
-            border: 1px solid #cbd5e1;
-            background-color: #f8fafc;
+            border: 1px solid var(--border);
+            background-color: var(--bg);
             border-radius: 4px;
             cursor: pointer;
-            color: #475569;
+            color: var(--muted);
             font-weight: 600;
         }
         .move-btn:active {
-            background-color: #e2e8f0;
+            background-color: var(--badge-bg);
         }
 
         /* 編集モーダル背景 */
@@ -226,13 +337,13 @@
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.5);
+            background: var(--modal-overlay);
             justify-content: center;
             align-items: center;
             z-index: 1000;
         }
         .modal-content {
-            background: #ffffff;
+            background: var(--panel-bg);
             padding: 24px;
             border-radius: 12px;
             width: 90%;
@@ -243,23 +354,27 @@
             gap: 15px;
         }
         .modal-content h3 {
-            color: #1e293b;
+            color: var(--heading);
             font-size: 18px;
         }
         .modal-content label {
             font-size: 13px;
             font-weight: 600;
-            color: #475569;
+            color: var(--muted);
         }
-        .modal-content input {
+        .modal-content input, .modal-content select, .modal-content textarea {
             padding: 10px 12px;
-            border: 2px solid #cbd5e1;
+            border: 2px solid var(--border);
             border-radius: 6px;
             font-size: 15px;
+            font-family: inherit;
             outline: none;
+            background-color: var(--panel-bg);
+            color: var(--text);
+            resize: vertical;
         }
-        .modal-content input:focus {
-            border-color: #3b82f6;
+        .modal-content input:focus, .modal-content select:focus, .modal-content textarea:focus {
+            border-color: var(--accent);
         }
         .modal-buttons {
             display: flex;
@@ -276,13 +391,41 @@
             font-size: 14px;
         }
         .btn-cancel {
-            background-color: #e2e8f0;
-            color: #475569;
+            background-color: var(--badge-bg);
+            color: var(--muted);
         }
         .btn-save {
-            background-color: #3b82f6;
+            background-color: var(--accent);
             color: white;
         }
+
+        /* トースト通知 */
+        .toast-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 2000;
+        }
+        .toast {
+            padding: 12px 18px;
+            border-radius: 8px;
+            color: #ffffff;
+            font-size: 14px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.25s, transform 0.25s;
+            max-width: 320px;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .toast-error { background-color: var(--danger); }
+        .toast-success { background-color: var(--success); }
 
         /* カラムごとのテーマカラー */
         #col-todo { border-top: 4px solid #f59e0b; }
@@ -292,13 +435,13 @@
         #col-todo .card { border-left-color: #f59e0b; }
         #col-inprogress .card { border-left-color: #3b82f6; }
         #col-done .card { border-left-color: #10b981; }
-        #col-done .card-text { text-decoration: line-through; color: #94a3b8; }
+        #col-done .card-text { text-decoration: line-through; color: var(--muted-2); }
 
         /* レスポンシブ対応 */
         @media (max-width: 768px) {
             body { padding: 15px 10px; }
             .input-container, .filter-container { flex-direction: column; gap: 10px; }
-            #taskAssignee, #taskTitle, #filterAssignee, .input-container button { width: 100%; }
+            #taskAssignee, #taskTitle, #taskDueDate, #taskPriority, #filterAssignee, .input-container button { width: 100%; }
             .board { flex-direction: column; gap: 20px; }
             .column { min-height: auto; }
             .task-list { min-height: 80px; }
@@ -308,6 +451,7 @@
 <body>
 
 <h1>Task管理ボード</h1>
+<div class="loading" id="loadingIndicator">読み込み中...</div>
 
 <div class="controls-container">
     <!-- フィルターエリア -->
@@ -322,7 +466,16 @@
     <div class="input-container">
         <input type="text" id="taskAssignee" placeholder="担当者名 (例: 山田)">
         <input type="text" id="taskTitle" placeholder="新しいタスクを入力..." onkeydown="if(event.key==='Enter') addTask()">
-        <button onclick="addTask()">タスク追加</button>
+        <input type="date" id="taskDueDate" title="締切日（任意）">
+        <select id="taskPriority" title="優先度">
+            <option value="LOW">低</option>
+            <option value="MEDIUM" selected>中</option>
+            <option value="HIGH">高</option>
+        </select>
+        <button id="addTaskBtn" onclick="addTask()">タスク追加</button>
+    </div>
+    <div class="input-container description-row">
+        <textarea id="taskDescription" placeholder="詳細情報（任意） - メモや補足事項などを入力できます" rows="2"></textarea>
     </div>
 </div>
 
@@ -362,13 +515,27 @@
         <input type="hidden" id="editTaskId">
         <input type="hidden" id="editTaskStatus">
         <input type="hidden" id="editTaskCreatedAt">
-        
+        <input type="hidden" id="editTaskOrder">
+
         <label for="editTaskTitle">タスク名</label>
         <input type="text" id="editTaskTitle">
-        
+
         <label for="editTaskAssignee">担当者名</label>
         <input type="text" id="editTaskAssignee">
-        
+
+        <label for="editTaskDueDate">締切日</label>
+        <input type="date" id="editTaskDueDate">
+
+        <label for="editTaskPriority">優先度</label>
+        <select id="editTaskPriority">
+            <option value="LOW">低</option>
+            <option value="MEDIUM">中</option>
+            <option value="HIGH">高</option>
+        </select>
+
+        <label for="editTaskDescription">詳細情報</label>
+        <textarea id="editTaskDescription" rows="5" placeholder="詳細情報（任意）"></textarea>
+
         <div class="modal-buttons">
             <button class="btn-cancel" onclick="closeEditModal()">キャンセル</button>
             <button class="btn-save" onclick="saveEditedTask()">保存する</button>
@@ -376,29 +543,71 @@
     </div>
 </div>
 
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="config.js"></script>
 <script>
-    const API_URL = "https://ra1yyej058.execute-api.ap-northeast-1.amazonaws.com/Prod/tasks";
+    const API_URL = API_CONFIG.BASE_URL;
 
     let draggedTask = null;
     let touchCardEl = null;
     let allTasksCache = []; // 取得したタスクのキャッシュ
+    let hasLoadedOnce = false;
+
+    const PRIORITY_LABEL = { LOW: '低', MEDIUM: '中', HIGH: '高' };
+
+    // APIキー付与とエラーハンドリングをまとめたfetchラッパー
+    async function apiFetch(url, options = {}) {
+        const headers = Object.assign({}, options.headers, { 'x-api-key': API_CONFIG.API_KEY });
+        const res = await fetch(url, Object.assign({}, options, { headers }));
+        if (!res.ok) {
+            let message = `リクエストに失敗しました (HTTP ${res.status})`;
+            try {
+                const errBody = await res.json();
+                if (errBody && errBody.error) message = errBody.error;
+            } catch (_) {
+                // レスポンスがJSONでない場合はデフォルトメッセージのまま
+            }
+            throw new Error(message);
+        }
+        return res;
+    }
+
+    function showToast(message, type = 'error') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.textContent = message;
+        container.appendChild(toast);
+        requestAnimationFrame(() => toast.classList.add('show'));
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, 3500);
+    }
+
+    function isOverdue(task) {
+        if (!task.dueDate || task.status === 'COMPLETED') return false;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return new Date(task.dueDate) < today;
+    }
 
     // 1. タスク一覧取得・描画
     async function fetchTasks() {
         try {
-            const res = await fetch(API_URL);
+            const res = await apiFetch(API_URL);
             allTasksCache = await res.json();
-            
+
             // 担当者フィルターの選択肢を更新
             updateAssigneeFilterOptions(allTasksCache);
 
             const selectedAssignee = document.getElementById('filterAssignee').value;
-            
-            // フィルター適用
-            const filteredTasks = allTasksCache.filter(task => {
-                if (selectedAssignee === 'ALL') return true;
-                return (task.assignee || '未設定') === selectedAssignee;
-            });
+
+            // フィルター適用 + 表示順(order)でソート
+            const filteredTasks = allTasksCache
+                .filter(task => selectedAssignee === 'ALL' || (task.assignee || '未設定') === selectedAssignee)
+                .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
             const lists = {
                 'PENDING': document.getElementById('PENDING'),
@@ -435,6 +644,8 @@
 
                 const assignee = task.assignee || '未設定';
                 const createdAt = task.createdAt || '日時不明';
+                const priority = task.priority || 'MEDIUM';
+                const overdue = isOverdue(task);
 
                 // ステータス移動用クイックボタン
                 let moveButtonsHtml = '<div class="status-actions">';
@@ -449,14 +660,23 @@
                 }
                 moveButtonsHtml += '</div>';
 
+                const dueBadgeHtml = task.dueDate
+                    ? `<span class="due-badge${overdue ? ' overdue' : ''}">🗓 ${escapeHtml(task.dueDate)}${overdue ? '（期限超過）' : ''}</span>`
+                    : '';
+                const descriptionIconHtml = task.description
+                    ? '<span class="description-icon" title="詳細情報あり（クリックして確認）">📝</span>'
+                    : '';
+
                 card.innerHTML = `
                     <div class="card-header">
-                        <span class="card-text">${escapeHtml(task.title)}</span>
+                        <span class="card-text">${escapeHtml(task.title)} ${descriptionIconHtml}</span>
                         <button class="delete-btn" onclick="deleteTask('${task.id}')" title="削除">✕</button>
                     </div>
                     <div class="card-footer">
                         <span class="assignee-badge">👤 ${escapeHtml(assignee)}</span>
+                        <span class="priority-badge priority-${priority}">${PRIORITY_LABEL[priority] || priority}</span>
                         <span>🕒 ${escapeHtml(createdAt)}</span>
+                        ${dueBadgeHtml}
                     </div>
                     ${moveButtonsHtml}
                 `;
@@ -471,6 +691,12 @@
 
         } catch (err) {
             console.error("タスク取得エラー:", err);
+            showToast(`タスクの取得に失敗しました: ${err.message}`);
+        } finally {
+            if (!hasLoadedOnce) {
+                hasLoadedOnce = true;
+                document.getElementById('loadingIndicator').style.display = 'none';
+            }
         }
     }
 
@@ -478,9 +704,9 @@
     function updateAssigneeFilterOptions(tasks) {
         const select = document.getElementById('filterAssignee');
         const currentVal = select.value;
-        
+
         const assignees = [...new Set(tasks.map(t => t.assignee || '未設定'))];
-        
+
         let html = '<option value="ALL">すべて表示</option>';
         assignees.forEach(name => {
             const selected = name === currentVal ? 'selected' : '';
@@ -493,7 +719,11 @@
     async function addTask() {
         const titleInput = document.getElementById('taskTitle');
         const assigneeInput = document.getElementById('taskAssignee');
-        
+        const dueDateInput = document.getElementById('taskDueDate');
+        const priorityInput = document.getElementById('taskPriority');
+        const descriptionInput = document.getElementById('taskDescription');
+        const addBtn = document.getElementById('addTaskBtn');
+
         const title = titleInput.value.trim();
         const assignee = assigneeInput.value.trim() || '未設定';
 
@@ -507,21 +737,32 @@
         const minutes = String(now.getMinutes()).padStart(2, '0');
         const createdAt = `${year}/${month}/${date} ${hours}:${minutes}`;
 
+        addBtn.disabled = true;
         try {
-            await fetch(API_URL, {
+            await apiFetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    title: title, 
+                body: JSON.stringify({
+                    title: title,
                     assignee: assignee,
                     createdAt: createdAt,
-                    status: 'PENDING' 
+                    dueDate: dueDateInput.value || null,
+                    priority: priorityInput.value,
+                    description: descriptionInput.value.trim(),
+                    status: 'PENDING'
                 })
             });
             titleInput.value = '';
+            dueDateInput.value = '';
+            priorityInput.value = 'MEDIUM';
+            descriptionInput.value = '';
+            showToast('タスクを追加しました', 'success');
             fetchTasks();
         } catch (err) {
             console.error("追加エラー:", err);
+            showToast(`タスクの追加に失敗しました: ${err.message}`);
+        } finally {
+            addBtn.disabled = false;
         }
     }
 
@@ -530,9 +771,13 @@
         document.getElementById('editTaskId').value = task.id;
         document.getElementById('editTaskStatus').value = task.status || 'PENDING';
         document.getElementById('editTaskCreatedAt').value = task.createdAt || '';
+        document.getElementById('editTaskOrder').value = task.order ?? '';
         document.getElementById('editTaskTitle').value = task.title || '';
         document.getElementById('editTaskAssignee').value = task.assignee || '未設定';
-        
+        document.getElementById('editTaskDueDate').value = task.dueDate || '';
+        document.getElementById('editTaskPriority').value = task.priority || 'MEDIUM';
+        document.getElementById('editTaskDescription').value = task.description || '';
+
         document.getElementById('editModal').style.display = 'flex';
     }
 
@@ -544,16 +789,20 @@
         const id = document.getElementById('editTaskId').value;
         const status = document.getElementById('editTaskStatus').value;
         const createdAt = document.getElementById('editTaskCreatedAt').value;
+        const orderVal = document.getElementById('editTaskOrder').value;
         const title = document.getElementById('editTaskTitle').value.trim();
         const assignee = document.getElementById('editTaskAssignee').value.trim() || '未設定';
+        const dueDate = document.getElementById('editTaskDueDate').value;
+        const priority = document.getElementById('editTaskPriority').value;
+        const description = document.getElementById('editTaskDescription').value.trim();
 
         if (!title) {
-            alert('タスク名を入力してください');
+            showToast('タスク名を入力してください');
             return;
         }
 
         try {
-            await fetch(API_URL, {
+            await apiFetch(API_URL, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -561,13 +810,19 @@
                     title: title,
                     assignee: assignee,
                     createdAt: createdAt,
+                    dueDate: dueDate || null,
+                    priority: priority,
+                    description: description,
+                    order: orderVal ? Number(orderVal) : null,
                     status: status
                 })
             });
             closeEditModal();
+            showToast('タスクを更新しました', 'success');
             fetchTasks();
         } catch (err) {
             console.error("編集保存エラー:", err);
+            showToast(`タスクの更新に失敗しました: ${err.message}`);
         }
     }
 
@@ -585,13 +840,49 @@
         e.preventDefault();
     }
 
+    // ドロップ位置(Y座標)から「どのカードの後ろに挿入するか」を求める
+    function getDragAfterElement(container, y, excludeId) {
+        const cards = [...container.querySelectorAll('.card')].filter(el => el.id !== `task-${excludeId}`);
+        return cards.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            if (offset < 0 && offset > closest.offset) {
+                return { offset, element: child };
+            }
+            return closest;
+        }, { offset: Number.NEGATIVE_INFINITY, element: null }).element;
+    }
+
+    function orderOfElement(el) {
+        const id = el.id.replace('task-', '');
+        const task = allTasksCache.find(t => t.id === id);
+        return task && task.order != null ? task.order : 0;
+    }
+
+    // 挿入位置の前後にあるカードのorder値から、新しいorder値を算出する
+    function computeOrderForPosition(container, afterElement, excludeId) {
+        if (!afterElement) {
+            const cards = [...container.querySelectorAll('.card')].filter(el => el.id !== `task-${excludeId}`);
+            if (cards.length === 0) return Date.now();
+            return orderOfElement(cards[cards.length - 1]) + 1000;
+        }
+        const nextOrder = orderOfElement(afterElement);
+        const prevEl = afterElement.previousElementSibling;
+        if (prevEl && prevEl.classList.contains('card') && prevEl.id !== `task-${excludeId}`) {
+            return (orderOfElement(prevEl) + nextOrder) / 2;
+        }
+        return nextOrder - 1000;
+    }
+
     async function drop(e) {
         e.preventDefault();
         const targetList = e.currentTarget;
         const newStatus = targetList.id;
 
         if (!draggedTask || !newStatus) return;
-        updateTaskStatus(draggedTask, newStatus);
+        const afterElement = getDragAfterElement(targetList, e.clientY, draggedTask.id);
+        const newOrder = computeOrderForPosition(targetList, afterElement, draggedTask.id);
+        updateTaskStatus(draggedTask, newStatus, newOrder);
     }
 
     // スマホタッチ処理
@@ -609,14 +900,16 @@
 
     function handleTouchEnd(e) {
         if (!touchCardEl || !draggedTask) return;
-        
+
         const touch = e.changedTouches[0];
         const targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
         const taskList = targetEl ? targetEl.closest('.task-list') : null;
 
         if (taskList) {
             const newStatus = taskList.id;
-            updateTaskStatus(draggedTask, newStatus);
+            const afterElement = getDragAfterElement(taskList, touch.clientY, draggedTask.id);
+            const newOrder = computeOrderForPosition(taskList, afterElement, draggedTask.id);
+            updateTaskStatus(draggedTask, newStatus, newOrder);
         }
 
         touchCardEl.classList.remove('dragging');
@@ -627,13 +920,15 @@
     async function moveTaskDirect(id, newStatus) {
         const task = allTasksCache.find(t => t.id === id);
         if (task) {
-            updateTaskStatus(task, newStatus);
+            const targetList = document.getElementById(newStatus);
+            const newOrder = computeOrderForPosition(targetList, null, id);
+            updateTaskStatus(task, newStatus, newOrder);
         }
     }
 
-    async function updateTaskStatus(task, newStatus) {
+    async function updateTaskStatus(task, newStatus, newOrder) {
         try {
-            await fetch(API_URL, {
+            await apiFetch(API_URL, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -641,28 +936,36 @@
                     title: task.title,
                     assignee: task.assignee,
                     createdAt: task.createdAt,
-                    status: newStatus
+                    dueDate: task.dueDate || null,
+                    priority: task.priority || 'MEDIUM',
+                    description: task.description || '',
+                    status: newStatus,
+                    order: newOrder
                 })
             });
             draggedTask = null;
             fetchTasks();
         } catch (err) {
             console.error("ステータス更新エラー:", err);
+            showToast(`ステータスの更新に失敗しました: ${err.message}`);
         }
     }
 
     // 5. 削除
     async function deleteTask(id) {
+        if (!confirm('このタスクを削除します。よろしいですか？')) return;
         try {
-            await fetch(`${API_URL}?id=${id}`, { method: 'DELETE' });
+            await apiFetch(`${API_URL}?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+            showToast('タスクを削除しました', 'success');
             fetchTasks();
         } catch (err) {
             console.error("削除エラー:", err);
+            showToast(`タスクの削除に失敗しました: ${err.message}`);
         }
     }
 
     function escapeHtml(str) {
-        return str.replace(/[&<>"']/g, function(m) {
+        return String(str).replace(/[&<>"']/g, function(m) {
             return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
         });
     }

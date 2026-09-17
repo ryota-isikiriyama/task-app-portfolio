@@ -6,13 +6,57 @@ Globals:
   Function:
     Timeout: 30
     MemorySize: 512
-  Api:
-    Cors:
-      AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
-      AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
-      AllowOrigin: "'*'"
 
 Resources:
+  TaskApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      Cors:
+        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+        AllowOrigin: "'*'"
+      Auth:
+        ApiKeyRequired: true
+
+  # APIキー自体はフロントエンドのJS（web/config.js）に埋め込まれる=公開情報になるため、
+  # 「秘密情報として守る」ものではなく「利用量を制限する」ためのもの。
+  # 実質的な保護は下のUsagePlanのThrottle/Quotaが担っている。
+  TaskApiKey:
+    Type: AWS::ApiGateway::ApiKey
+    DependsOn:
+      - TaskApiProdStage
+    Properties:
+      Name: task-app-portfolio-key
+      Enabled: true
+      StageKeys:
+        - RestApiId: !Ref TaskApi
+          StageName: Prod
+
+  TaskApiUsagePlan:
+    Type: AWS::ApiGateway::UsagePlan
+    DependsOn:
+      - TaskApiProdStage
+    Properties:
+      UsagePlanName: task-app-portfolio-usage-plan
+      Description: Demoアプリの想定利用量に合わせたレート制限/クォータ
+      ApiStages:
+        - ApiId: !Ref TaskApi
+          Stage: Prod
+      Throttle:
+        RateLimit: 5
+        BurstLimit: 10
+      Quota:
+        Limit: 2000
+        Period: DAY
+
+  TaskApiUsagePlanKey:
+    Type: AWS::ApiGateway::UsagePlanKey
+    Properties:
+      KeyId: !Ref TaskApiKey
+      KeyType: API_KEY
+      UsagePlanId: !Ref TaskApiUsagePlan
+
   TasksTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -20,9 +64,18 @@ Resources:
       AttributeDefinitions:
         - AttributeName: id
           AttributeType: S
+        - AttributeName: assignee
+          AttributeType: S
       KeySchema:
         - AttributeName: id
           KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: AssigneeIndex
+          KeySchema:
+            - AttributeName: assignee
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
       BillingMode: PAY_PER_REQUEST
 
   TaskFunction:
@@ -40,25 +93,32 @@ Resources:
         GetTasks:
           Type: Api
           Properties:
+            RestApiId: !Ref TaskApi
             Path: /tasks
             Method: get
         CreateTask:
           Type: Api
           Properties:
+            RestApiId: !Ref TaskApi
             Path: /tasks
             Method: post
         UpdateTask:
           Type: Api
           Properties:
+            RestApiId: !Ref TaskApi
             Path: /tasks
             Method: put
         DeleteTask:
           Type: Api
           Properties:
+            RestApiId: !Ref TaskApi
             Path: /tasks
             Method: delete
 
 Outputs:
   TaskApiUrl:
     Description: "API Gateway endpoint URL"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/tasks"
+    Value: !Sub "https://${TaskApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/tasks"
+  ApiKeyId:
+    Description: "APIキーのID。実際の値は次のコマンドで取得し web/config.js の API_KEY に設定する: aws apigateway get-api-key --api-key <このID> --include-value --query value --output text"
+    Value: !Ref TaskApiKey
